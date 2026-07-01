@@ -129,7 +129,7 @@
 const GITHUB_API = "https://api.github.com";
 let GIST_ID = "";
 let state = { auth:null, team:null, tasks:null, leaves:null, pending:null, user:null, raw:null };
-const LS = { token:(u)=>`tos_token_${u}`, pass:(u)=>`tos_pass_${u}`, gist:"tos_gist_id", loc:()=>"tos_lastloc", session:"tos_session" };
+const LS = { token:(u)=>`tos_token_${u}`, pass:(u)=>`tos_pass_${u}`, gist:"tos_gist_id", loc:()=>"tos_lastloc", session:"tos_session", cache:"tos_gist_cache" };
 
 /* ---------- theme ---------- */
 /* Glass icon helper: prefer Nucleo Glass set, fall back to inline stroke svg */
@@ -175,7 +175,13 @@ async function getGist(token){
   token = token || (state.user && currentUserToken()) || "";
   const headers = { "Accept":"application/vnd.github+json" };
   if(token) headers.Authorization = `Bearer ${token}`;
-  // cache-bust: gist API reads can be CDN-cached for ~60s on unauthenticated calls
+  // unauthenticated reads: use 60s localStorage cache to avoid 60/hr rate limit
+  if(!token){
+    try {
+      const c = JSON.parse(localStorage.getItem(LS.cache));
+      if(c && c.t && Date.now()-c.t < 60000){ state.raw = c.raw; state.auth = c.auth; state.team = c.team; state.tasks = c.tasks; state.leaves = c.leaves; state.pending = c.pending; return; }
+    } catch(e){}
+  }
   const r = await fetch(`${GITHUB_API}/gists/${GIST_ID}?_=${Date.now()}`, { headers });
   if(!r.ok) throw new Error("Gist read failed: "+r.status);
   const j = await r.json();
@@ -184,6 +190,9 @@ async function getGist(token){
   state.auth = parse("auth.json"); state.team = parse("team.json");
   state.tasks = parse("tasks.json"); state.leaves = parse("leaves.json");
   state.pending = parse("pending_approvals.json");
+  if(!token){
+    try { localStorage.setItem(LS.cache, JSON.stringify({ t:Date.now(), raw:state.raw, auth:state.auth, team:state.team, tasks:state.tasks, leaves:state.leaves, pending:state.pending })); } catch(e){}
+  }
 }
 async function patchGist(token, files){
   const body = { files };
@@ -192,6 +201,7 @@ async function patchGist(token, files){
     body: JSON.stringify(body)
   });
   if(!r.ok){ let m="Gist write failed: "+r.status; try{const e=await r.json();m+=" "+(e.message||"");}catch(_){} throw new Error(m); }
+  localStorage.removeItem(LS.cache); // invalidate cache after write
   return r.json();
 }
 function writeFile(file, obj){ return patchGist(currentUserToken(), { [file]: { content: JSON.stringify(obj,null,2) } }); }
@@ -677,20 +687,21 @@ async function boot(){
   await init();
 }
 async function init(){
-  try { await getGist(); } catch(e){ document.getElementById('view').innerHTML=`<div class="card">Failed to load gist: ${e.message}</div>`; return; }
-  // auto-restore session on reload (token is in localStorage, persisted)
+  // restore session first so getGist uses token (authenticated = 5000/hr, not 60/hr)
   const saved = restoreSession();
+  if(saved) state.user = saved;
+  try { await getGist(); } catch(e){ document.getElementById('view').innerHTML=`<div class="card">Failed to load gist: ${e.message}</div>`; return; }
   if(saved){
     // refresh name/role from latest gist data in case lead changed it
     if(saved.role==='lead'){ saved.name = state.auth.lead.name||saved.username; saved.rights = state.auth.lead.rights; }
-    else { const d = devByUsername(saved.username); if(d){ saved.name = d.name; saved.rights = d.rights; } else { localStorage.removeItem(LS.session); } }
-    state.user = saved;
+    else { const d = devByUsername(saved.username); if(d){ saved.name = d.name; saved.rights = d.rights; } else { localStorage.removeItem(LS.session); state.user=null; } }
+    saveSession();
     render();
     checkin();
-    return;
+  } else {
+    render();
   }
-  render();
-  // refresh every 60s so everyone sees latest
+  // refresh every 60s so everyone sees latest (uses token when logged in)
   setInterval(async ()=>{ try{ await getGist(); if(state.user) render(); }catch(_){} }, 60000);
 }
 boot();
