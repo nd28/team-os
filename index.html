@@ -209,7 +209,7 @@ async function approveChange(id){
   state.pending.requests = state.pending.requests.filter(x=>x.id!==id);
   await patchGist(currentUserToken(), {
     [r.file]: { content: JSON.stringify(state[r.fileKey],null,2) },
-    pending_approvals.json: { content: JSON.stringify(state.pending,null,2) }
+    "pending_approvals.json": { content: JSON.stringify(state.pending,null,2) }
   });
   toast("Approved & applied.");
   await getGist(); render();
