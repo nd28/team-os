@@ -13,12 +13,15 @@
     --txt:#e6edf3; --mut:#8b949e; --acc:#2f81f7; --ok:#3fb950; --warn:#d29922; --bad:#f85149;
     --pri:#a371f7; --radius:12px; --inbg:#0b0f15; --on-accent:#fff;
     --shadow:0 1px 0 rgba(0,0,0,.2);
-    /* glassmorphism tokens */
-    --glass-bg:rgba(22,27,34,.55); --glass-bg2:rgba(28,34,48,.50); --glass-border:rgba(255,255,255,.08);
-    --glass-blur:blur(14px) saturate(160%); --glass-shadow:0 8px 32px rgba(0,0,0,.37);
-    --body-grad:radial-gradient(circle at 15% 10%, rgba(47,129,247,.10), transparent 40%),
-                radial-gradient(circle at 85% 90%, rgba(163,113,247,.10), transparent 40%),
-                radial-gradient(circle at 50% 50%, rgba(63,185,80,.05), transparent 50%);
+    /* glassmorphism tokens — mix plan: real glass for sticky/overlays, solid for content */
+    --glass-bg:rgba(22,27,34,.72); --glass-bg2:rgba(28,34,48,.60); --glass-border:rgba(255,255,255,.14);
+    --glass-blur:blur(20px) saturate(160%);
+    --glass-shadow:inset 0 1px 0 rgba(255,255,255,.14), 0 8px 24px rgba(0,0,0,.35);
+    --body-grad:radial-gradient(circle at 15% 10%, rgba(47,129,247,.18), transparent 42%),
+                radial-gradient(circle at 85% 90%, rgba(163,113,247,.18), transparent 42%),
+                radial-gradient(circle at 50% 50%, rgba(63,185,80,.10), transparent 50%),
+                radial-gradient(circle at 5% 85%, rgba(255,170,80,.14), transparent 38%),
+                radial-gradient(circle at 92% 12%, rgba(80,200,220,.14), transparent 38%);
   }
   /* light theme — overrides the same tokens */
   :root[data-theme="light"]{
@@ -51,6 +54,7 @@
   header.top .user-btn .ustatus{font-size:11px;color:var(--mut);line-height:1}
   header.top .user-btn .ucol{display:flex;flex-direction:column;align-items:flex-start;line-height:1.1;gap:2px}
   .user-menu{position:absolute;top:calc(100% + 6px);right:0;min-width:220px;background:var(--glass-bg);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);border:1px solid var(--glass-border);border-radius:12px;box-shadow:var(--glass-shadow);padding:6px;z-index:50;display:none}
+  .user-wrap{position:relative;display:inline-flex;align-items:center}
   .user-menu.open{display:flex;flex-direction:column;gap:2px}
   .user-menu .um-head{padding:10px 12px;border-bottom:1px solid var(--glass-border);margin-bottom:4px}
   .user-menu .um-head .un{font-weight:600;color:var(--txt);font-size:14px}
@@ -67,7 +71,7 @@
   nav.tabs{display:flex;gap:4px;padding:8px 10px;border-bottom:1px solid var(--glass-border);overflow:auto;background:var(--glass-bg);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur)}
   nav.tabs button{white-space:nowrap;background:transparent;border-color:transparent;color:var(--mut);flex:1 1 0;justify-content:center;display:flex;align-items:center;gap:6px;min-height:44px}
   nav.tabs button.active{color:var(--txt);box-shadow:inset 0 -3px 0 var(--acc)}
-  .card{background:var(--glass-bg);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);border:1px solid var(--glass-border);border-radius:var(--radius);padding:14px;margin:12px 0;box-shadow:var(--glass-shadow)}
+  .card{background:var(--panel);border:1px solid var(--glass-border);border-radius:var(--radius);padding:14px;margin:12px 0;box-shadow:inset 0 1px 0 rgba(255,255,255,.04), 0 1px 0 rgba(0,0,0,.2)}
   .grid{display:grid;gap:12px}
   .kanban{grid-template-columns:repeat(4,1fr)}
   @media(max-width:760px){
@@ -83,9 +87,9 @@
     header.top .user-btn{padding:2px;min-height:32px}
     header.top .user-btn .avatar{width:30px;height:30px;font-size:13px}
   }
-  .col{background:var(--glass-bg);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);border:1px solid var(--glass-border);border-radius:var(--radius);padding:10px;min-height:80px}
+  .col{background:var(--panel);border:1px solid var(--glass-border);border-radius:var(--radius);padding:10px;min-height:80px;box-shadow:inset 0 1px 0 rgba(255,255,255,.04), 0 1px 0 rgba(0,0,0,.2)}
   .col h3{margin:6px 8px 10px;font-size:14px;color:var(--mut);text-transform:uppercase;letter-spacing:.04em;display:flex;justify-content:space-between}
-  .task{background:var(--glass-bg2);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);border:1px solid var(--glass-border);border-radius:12px;padding:12px;margin:8px 0}
+  .task{background:var(--panel2);border:1px solid var(--glass-border);border-radius:12px;padding:12px;margin:8px 0;box-shadow:inset 0 1px 0 rgba(255,255,255,.03), 0 1px 0 rgba(0,0,0,.2)}
   .task .t{font-weight:600;font-size:16px}
   .task .m{font-size:14px;color:var(--mut);margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
   .badge{font-size:13px;padding:4px 10px;border-radius:20px;background:var(--panel);border:1px solid var(--border)}
@@ -414,23 +418,25 @@ function render(){
   if(state.user){
     const st = statusOf(state.user.name);
     who.innerHTML = `
-      <button class="user-btn" id="userBtn" title="${state.user.name}">
-        <span class="avatar">${initials(state.user.name)}</span>
-        <span class="ucol">
-          <span class="uname">${state.user.name}</span>
-          <span class="ustatus"><span class="status ${st}"><span class="dot"></span>${st}</span></span>
-        </span>
-        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:.6"><path d="M6 9l6 6 6-6"/></svg>
-      </button>
-      <div class="user-menu" id="userMenu">
-        <div class="um-head">
-          <div class="un">${state.user.name}</div>
-          <div class="ur">${state.user.role || 'member'}</div>
+      <span class="user-wrap">
+        <button class="user-btn" id="userBtn" title="${state.user.name}">
+          <span class="avatar">${initials(state.user.name)}</span>
+          <span class="ucol">
+            <span class="uname">${state.user.name}</span>
+            <span class="ustatus"><span class="status ${st}"><span class="dot"></span>${st}</span></span>
+          </span>
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:.6"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="user-menu" id="userMenu">
+          <div class="um-head">
+            <div class="un">${state.user.name}</div>
+            <div class="ur">${state.user.role || 'member'}</div>
+          </div>
+          <button id="btnCheckin">${IC.loc} Check-in</button>
+          <div class="um-sep"></div>
+          <button class="danger" id="btnLogout">${IC.logout} Logout</button>
         </div>
-        <button id="btnCheckin">${IC.loc} Check-in</button>
-        <div class="um-sep"></div>
-        <button class="danger" id="btnLogout">${IC.logout} Logout</button>
-      </div>
+      </span>
       ${rlBadgeHTML}${themeBtnHTML}`;
     document.getElementById('userBtn').onclick = (e) => { e.stopPropagation(); toggleUserMenu(); };
     document.getElementById('btnCheckin').onclick = () => { closeUserMenu(); checkin(); };
@@ -810,8 +816,8 @@ async function init(){
   // close user menu on outside click / Escape
   document.addEventListener('click', (e) => {
     const m = document.getElementById('userMenu');
-    const b = document.getElementById('userBtn');
-    if(m && m.classList.contains('open') && !m.contains(e.target) && e.target !== b && !b?.contains(e.target)) closeUserMenu();
+    const wrap = e.target.closest('.user-wrap');
+    if(m && m.classList.contains('open') && !wrap) closeUserMenu();
   });
   document.addEventListener('keydown', (e) => { if(e.key === 'Escape') closeUserMenu(); });
 }
