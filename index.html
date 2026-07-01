@@ -497,7 +497,7 @@ function viewBoard(){
       card.onclick = ()=>openTask(t);
       c.appendChild(card);
     });
-    if(isLead()){
+    if(isLead() || col==='backlog'){
       const add = el(`<button class="sm" style="margin:6px 0">+ add</button>`);
       add.onclick = ()=>openTask(null, col);
       c.appendChild(add);
@@ -517,13 +517,15 @@ function openTask(t, col){
   const isNew = !t;
   const task = t || {id:uid(), title:'', owner:state.user.id, status:col||'backlog', priority:'medium', deadline:''};
   const opts = (arr,sel)=> arr.map(o=>`<option ${o===sel?'selected':''}>${o}</option>`).join('');
+  const devLocked = !isLead() && isNew; // developer adding: lock owner+status
   const members = state.team.members.map(m=>`<option value="${m.id}" ${m.id===task.owner?'selected':''}>${escapeHtml(m.name)}</option>`).join('');
   modal(`<h3>${isNew?'New task':'Task'}</h3>
     <label>Title</label><input id="tt" value="${escapeHtml(task.title)}" />
-    <label>Owner</label><select id="to">${members}</select>
-    <div class="row" style="gap:10px"><div style="flex:1"><label>Status</label><select id="ts">${opts(state.tasks.columns,task.status)}</select></div>
+    <label>Owner</label><select id="to" ${devLocked?'disabled':''}>${members}</select>
+    <div class="row" style="gap:10px"><div style="flex:1"><label>Status</label><select id="ts" ${devLocked?'disabled':''}>${opts(state.tasks.columns,task.status)}</select></div>
     <div style="flex:1"><label>Priority</label><select id="tp">${opts(state.tasks.priorities,task.priority)}</select></div></div>
     <label>Deadline (YYYY-MM-DD)</label><input id="td" type="date" value="${task.deadline||''}" />
+    ${devLocked?'<div class="muted small">Owner and status are fixed for developer-added tasks. Lead will review.</div>':''}
     <div class="row" style="margin-top:12px">
       ${isNew?'':`<button class="danger sm" id="tdel">Delete</button>`}
       <div class="spacer"></div>
@@ -532,7 +534,7 @@ function openTask(t, col){
     </div>`);
   document.getElementById('tcancel').onclick=closeModal;
   document.getElementById('tsave').onclick=async ()=>{
-    const payload = { id:task.id, title:val('tt').trim(), owner:val('to'), status:val('ts'), priority:val('tp'), deadline:val('td') };
+    const payload = { id:task.id, title:val('tt').trim(), owner:devLocked?state.user.id:val('to'), status:devLocked?'backlog':val('ts'), priority:val('tp'), deadline:val('td') };
     if(!payload.title) return toast("Title required");
     if(isNew){
       await proposeChange({type:'task_add', file:'tasks.json', fileKey:'tasks', summary:`Add task "${payload.title}"`, payload:{task:payload}});
@@ -642,6 +644,18 @@ function openLeave(){
 }
 
 /* ---------- Approvals view (lead) ---------- */
+function renderTaskAddDetail(p){
+  if(!p || !p.task) return '';
+  const t = p.task;
+  const owner = memberById(t.owner);
+  const due = dueInfo(t.deadline);
+  return `<div class="row" style="gap:8px;margin-top:8px;flex-wrap:wrap">
+    <span class="badge">${owner?escapeHtml(owner.name):'—'}</span>
+    <span class="pill ${t.priority}">${t.priority}</span>
+    <span class="due ${due.cls}">${IC.clock} ${due.txt}</span>
+    <span class="muted small">${t.status}</span>
+  </div>`;
+}
 function viewApprovals(){
   const wrap = el(`<div></div>`);
   const card = el(`<div class="card"><h3 style="margin-top:0">Pending approvals</h3></div>`);
@@ -651,6 +665,7 @@ function viewApprovals(){
     const d=el(`<div class="card" style="margin:8px 0">
       <div class="row"><b>${escapeHtml(r.summary)}</b><div class="spacer"></div><span class="badge">${r.type}</span></div>
       <div class="muted small">by ${escapeHtml(r.byName)} · ${timeAgo(r.createdAt)}</div>
+      ${r.type==='task_add' ? renderTaskAddDetail(r.payload) : ''}
       <div class="row" style="margin-top:10px"><button class="primary sm" data-a="ok">Approve</button><button class="danger sm" data-a="no">Reject</button></div>
     </div>`);
     d.querySelector('[data-a=ok]').onclick=()=>approveChange(r.id);
