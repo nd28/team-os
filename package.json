@@ -1,0 +1,16 @@
+{
+  "name": "team-os",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Team OS — single-page kanban, workload, leaves, approvals. Backed by a GitHub Gist.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "node tests/header.test.js"
+  },
+  "devDependencies": {
+    "vite": "^5.4.10"
+  }
+}
