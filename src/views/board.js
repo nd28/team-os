@@ -4,9 +4,11 @@
  */
 
 import { state, isLead, memberById } from '../state.js';
-import { el, escapeHtml } from '../util.js';
+import { el, escapeHtml, val, toast, uid, modal, closeModal } from '../util.js';
 import { dueInfo } from '../format.js';
 import { IC } from '../icons.js';
+import { proposeChange } from '../propose.js';
+import { writeFile, getGist } from '../gist.js';
 
 /**
  * Open-task count + load percentage for a member.
