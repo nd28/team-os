@@ -42,14 +42,28 @@
   input,select,textarea{font:inherit;background:var(--inbg);color:var(--txt);border:1px solid var(--border);border-radius:10px;padding:11px 12px;width:100%;min-height:44px}
   label{color:var(--mut);font-size:14px;display:block;margin:10px 0 4px}
   .wrap{max-width:1100px;margin:0 auto;padding:14px}
-  header.top{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--glass-border);position:sticky;top:0;background:var(--glass-bg);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);z-index:5}
-  header.top .brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:18px}
-  header.top .who{margin-left:auto;color:var(--mut);font-size:14px;display:flex;align-items:center;gap:8px}
+  header.top{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--glass-border);position:sticky;top:0;background:var(--glass-bg);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);z-index:5}
+  header.top .brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:17px;flex:0 0 auto}
+  header.top .who{margin-left:auto;color:var(--mut);font-size:14px;display:flex;align-items:center;gap:6px;flex:0 0 auto}
+  header.top .user-btn{display:flex;align-items:center;gap:8px;padding:4px 10px 4px 4px;border-radius:24px;background:var(--glass-bg2);border:1px solid var(--glass-border);color:var(--txt);min-height:36px;cursor:pointer;position:relative}
+  header.top .user-btn:hover{background:var(--panel2)}
+  header.top .user-btn .uname{font-weight:600;font-size:14px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  header.top .user-btn .ustatus{font-size:11px;color:var(--mut);line-height:1}
+  header.top .user-btn .ucol{display:flex;flex-direction:column;align-items:flex-start;line-height:1.1;gap:2px}
+  .user-menu{position:absolute;top:calc(100% + 6px);right:0;min-width:220px;background:var(--glass-bg);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);border:1px solid var(--glass-border);border-radius:12px;box-shadow:var(--glass-shadow);padding:6px;z-index:50;display:none}
+  .user-menu.open{display:flex;flex-direction:column;gap:2px}
+  .user-menu .um-head{padding:10px 12px;border-bottom:1px solid var(--glass-border);margin-bottom:4px}
+  .user-menu .um-head .un{font-weight:600;color:var(--txt);font-size:14px}
+  .user-menu .um-head .ur{font-size:12px;color:var(--mut);margin-top:2px}
+  .user-menu button{width:100%;justify-content:flex-start;background:transparent;border-color:transparent;color:var(--txt);min-height:38px;padding:8px 12px;border-radius:8px;display:flex;align-items:center;gap:10px;font-size:14px}
+  .user-menu button:hover{background:var(--panel2)}
+  .user-menu button.danger{color:var(--bad)}
+  .user-menu .um-sep{height:1px;background:var(--glass-border);margin:4px 0}
   .rl-badge{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--mut);font-variant-numeric:tabular-nums;min-height:28px;padding:4px 8px;border-radius:8px;background:var(--glass-bg2);border:1px solid var(--glass-border);white-space:nowrap}
   .rl-badge.low{color:var(--bad);border-color:var(--bad)}
   .rl-dot{width:7px;height:7px;border-radius:50%;background:var(--ok);display:inline-block;flex-shrink:0}
   .rl-badge.low .rl-dot{background:var(--bad)}
-  .avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--pri));display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff}
+  .avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--pri));display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex:0 0 auto}
   nav.tabs{display:flex;gap:4px;padding:8px 10px;border-bottom:1px solid var(--glass-border);overflow:auto;background:var(--glass-bg);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur)}
   nav.tabs button{white-space:nowrap;background:transparent;border-color:transparent;color:var(--mut);flex:1 1 0;justify-content:center;display:flex;align-items:center;gap:6px;min-height:44px}
   nav.tabs button.active{color:var(--txt);box-shadow:inset 0 -3px 0 var(--acc)}
@@ -65,6 +79,9 @@
     .wrap{padding:14px 14px 90px;order:1}
     nav.tabs button{flex-direction:column;font-size:12px;gap:2px}
     nav.tabs button .ic{width:22px;height:22px}
+    header.top .user-btn .uname, header.top .user-btn .ustatus, header.top .user-btn .ucol, header.top .user-btn > svg{display:none}
+    header.top .user-btn{padding:2px;min-height:32px}
+    header.top .user-btn .avatar{width:30px;height:30px;font-size:13px}
   }
   .col{background:var(--glass-bg);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);border:1px solid var(--glass-border);border-radius:var(--radius);padding:10px;min-height:80px}
   .col h3{margin:6px 8px 10px;font-size:14px;color:var(--mut);text-transform:uppercase;letter-spacing:.04em;display:flex;justify-content:space-between}
@@ -90,6 +107,7 @@
   @media(min-width:761px){ .toast{bottom:24px} }
   .ic{width:20px;height:20px;display:inline-block;vertical-align:-3px}
   .hide{display:none!important}
+  @media(max-width:760px){ .hide-on-mobile{display:none!important} }
   .muted{color:var(--mut)} .small{font-size:14px}
   .leavecard{display:flex;justify-content:space-between;gap:10px;align-items:center}
   details summary{cursor:pointer;color:var(--mut);padding:4px 0}
@@ -370,20 +388,59 @@ const TABS = [
 ];
 let currentTab = 'board';
 
+function initials(name){
+  if(!name) return '?';
+  const parts = name.trim().split(/\s+/);
+  return ((parts[0]?.[0]||'') + (parts[1]?.[0]||'')).toUpperCase() || name[0].toUpperCase();
+}
+function statusOf(name){
+  if(!name || !state.team) return 'active';
+  const m = state.team.members.find(x => x.name && x.name.toLowerCase() === name.toLowerCase());
+  return m?.status || 'active';
+}
+function closeUserMenu(){
+  const m = document.getElementById('userMenu');
+  if(m) m.classList.remove('open');
+}
+function toggleUserMenu(){
+  const m = document.getElementById('userMenu');
+  if(m) m.classList.toggle('open');
+}
 function render(){
+  closeUserMenu();
   const who = document.getElementById('who');
-  const themeBtnHTML = `<button class="sm theme-btn" id="themeBtn" title="Toggle light/dark" style="min-height:38px;padding:8px 10px">${currentTheme()==='light'?IC_MOON:IC_SUN}</button>`;
+  const themeBtnHTML = `<button class="sm theme-btn" id="themeBtn" title="Toggle light/dark" style="min-height:36px;padding:6px 8px">${currentTheme()==='light'?IC_MOON:IC_SUN}</button>`;
   const rlBadgeHTML = `<span class="rl-badge" id="rlBadge" title="GitHub API rate limit"></span>`;
   if(state.user){
-    who.innerHTML = `<span class="status active"><span class="dot"></span>${state.user.name}</span>
-      <button class="sm" id="btnCheckin">${IC.loc} Check-in</button>
-      <button class="sm" id="btnLogout">${IC.logout}</button>
+    const st = statusOf(state.user.name);
+    who.innerHTML = `
+      <button class="user-btn" id="userBtn" title="${state.user.name}">
+        <span class="avatar">${initials(state.user.name)}</span>
+        <span class="ucol">
+          <span class="uname">${state.user.name}</span>
+          <span class="ustatus"><span class="status ${st}"><span class="dot"></span>${st}</span></span>
+        </span>
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:.6"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div class="user-menu" id="userMenu">
+        <div class="um-head">
+          <div class="un">${state.user.name}</div>
+          <div class="ur">${state.user.role || 'member'}</div>
+        </div>
+        <button id="btnCheckin">${IC.loc} Check-in</button>
+        <div class="um-sep"></div>
+        <button class="danger" id="btnLogout">${IC.logout} Logout</button>
+      </div>
       ${rlBadgeHTML}${themeBtnHTML}`;
-    document.getElementById('btnCheckin').onclick=checkin;
-    document.getElementById('btnLogout').onclick=()=>{ state.user=null; render(); };
-  } else { who.innerHTML = `${rlBadgeHTML}${themeBtnHTML}<span class="muted small">not logged in</span>`; }
+    document.getElementById('userBtn').onclick = (e) => { e.stopPropagation(); toggleUserMenu(); };
+    document.getElementById('btnCheckin').onclick = () => { closeUserMenu(); checkin(); };
+    document.getElementById('btnLogout').onclick = () => { closeUserMenu(); state.user=null; render(); };
+  } else {
+    who.innerHTML = `${rlBadgeHTML}${themeBtnHTML}<span class="muted small hide-on-mobile" style="margin-left:4px">not logged in</span>`;
+  }
   renderRateLimit();
-  document.getElementById('themeBtn').onclick=()=>setTheme(currentTheme()==='dark'?'light':'dark');
+  const tb = document.getElementById('themeBtn');
+  if(tb) tb.onclick = () => setTheme(currentTheme()==='dark'?'light':'dark');
 
   const tabs = document.getElementById('tabs');
   tabs.innerHTML = "";
@@ -750,6 +807,13 @@ async function init(){
   setInterval(async ()=>{ try{ await getGist(); if(state.user) render(); }catch(_){} }, 60000);
   // countdown rate-limit badge every second
   setInterval(renderRateLimit, 1000);
+  // close user menu on outside click / Escape
+  document.addEventListener('click', (e) => {
+    const m = document.getElementById('userMenu');
+    const b = document.getElementById('userBtn');
+    if(m && m.classList.contains('open') && !m.contains(e.target) && e.target !== b && !b?.contains(e.target)) closeUserMenu();
+  });
+  document.addEventListener('keydown', (e) => { if(e.key === 'Escape') closeUserMenu(); });
 }
 boot();
 </script>
