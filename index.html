@@ -267,7 +267,7 @@ function render(){
     tabs.appendChild(b);
   });
   const v = document.getElementById('view');
-  if(!state.user){ v.innerHTML = loginHtml(); bindLogin(); return; }
+  if(!state.user){ v.innerHTML = ""; v.appendChild(loginHtml()); bindLogin(); return; }
   if(!state.team){ v.innerHTML = `<div class="empty">Loading…</div>`; return; }
   v.innerHTML = "";
   if(currentTab==='board') v.appendChild(viewBoard());
