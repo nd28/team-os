@@ -1,0 +1,22 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# build output
+dist/
+.vite/
+
+# editor
+.DS_Store
+*.log
+.vscode/
+.idea/
+
+# local env
+.env
+.env.local
+
+# test artifacts
+tests/node_modules/
+tests/screenshots/*.png
+!tests/screenshots/.gitkeep
