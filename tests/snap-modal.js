@@ -26,15 +26,25 @@ const URL = process.env.TEAM_OS_URL || "http://localhost:5173/team-os/";
       }});
       req.respond({ status: 200, contentType: "application/json",
         headers: { "access-control-allow-origin": "*", "x-ratelimit-remaining": "4999", "x-ratelimit-limit": "5000" },
-        body: JSON.stringify({
-          files: {
-            "auth.json": { content: JSON.stringify({ lead: { name: "Nilesh Suthar", rights: ["all"] }, developers: [] }) },
-            "team.json": { content: JSON.stringify({ statusOptions: ["active","remote","away","on-leave"], members: [{ id: "nilesh", name: "Nilesh Suthar", status: "active" }] }) },
-            "tasks.json": { content: JSON.stringify({ columns: ["backlog","todo","in-progress","done"], tasks: [], priorities: ["high","medium","low"] }) },
-            "leaves.json": { content: JSON.stringify({ leaves: [] }) },
-            "pending_approvals.json": { content: JSON.stringify({ requests: [] }) },
-          },
-        }),
+    body: JSON.stringify({
+      files: {
+        "auth.json": { content: JSON.stringify({ lead: { name: "Nilesh Suthar", rights: ["all"] }, developers: [] }) },
+        "team.json": { content: JSON.stringify({ statusOptions: ["active","remote","away","on-leave"], members: [
+          { id: "nilesh", name: "Nilesh Suthar", status: "active",  responsibilities: "Lead",      workload: 60 },
+          { id: "d1",     name: "Asha",          status: "remote",  responsibilities: "Frontend",  workload: 50 },
+          { id: "d2",     name: "Vikram",        status: "away",    responsibilities: "Backend",   workload: 85 },
+          { id: "d3",     name: "Priya",         status: "on-leave",responsibilities: "Design",     workload: 0 },
+        ] }) },
+        "tasks.json": { content: JSON.stringify({ columns: ["backlog","todo","doing","done"], tasks: [
+          { id: "t1", title: "API rate-limit handling", owner: "d2", status: "doing", priority: "low", deadline: "2026-07-10" },
+          { id: "t2", title: "Design review",           owner: "d1", status: "todo",  priority: "medium", deadline: "2026-07-05" },
+          { id: "t3", title: "Login bug",               owner: "d1", status: "todo",  priority: "high",   deadline: "2026-07-02" },
+          { id: "t4", title: "Old task",                owner: "d3", status: "done",  priority: "low",    deadline: "2026-06-15" },
+        ], priorities: ["high","medium","low"] }) },
+        "leaves.json": { content: JSON.stringify("[]") },
+        "pending.json": { content: JSON.stringify("[]") },
+      },
+    }),
       });
     } else req.continue();
   });
@@ -60,6 +70,12 @@ const URL = process.env.TEAM_OS_URL || "http://localhost:5173/team-os/";
   fs.mkdirSync(path.join(__dirname, "screenshots"), { recursive: true });
   await page.screenshot({ path: path.join(__dirname, "screenshots", "modal-current.png"), fullPage: false });
   console.log("saved: tests/screenshots/modal-current.png");
+
+  // open owner picker
+  await page.click("#ownerTrigger");
+  await new Promise((r) => setTimeout(r, 200));
+  await page.screenshot({ path: path.join(__dirname, "screenshots", "owner-picker.png"), fullPage: false });
+  console.log("saved: tests/screenshots/owner-picker.png");
 
   await browser.close();
 })().catch((e) => { console.error("FATAL:", e); process.exit(2); });

@@ -53,15 +53,52 @@ export function openTask(t, col) {
   const task = t || { id: uid(), title: '', owner: state.user.id, status: col || 'backlog', priority: 'medium', deadline: '' };
   const opt = (arr, sel) => arr.map((o) => `<option ${o === sel ? 'selected' : ''}>${o}</option>`).join('');
   const devLocked = !isLead() && isNew;
-  const members = state.team.members.map((m) => `<option value="${m.id}" ${m.id === task.owner ? 'selected' : ''}>${escapeHtml(m.name)}</option>`).join('');
+  const cur = state.team.members.find((m) => m.id === task.owner) || state.team.members[0];
+  const ownerOpts = state.team.members.map((m) => {
+    const w = workloadFor(m.id);
+    return `<div class="owner-option ${m.id === cur.id ? 'selected' : ''}" data-id="${m.id}" data-name="${escapeHtml(m.name)}" data-status="${m.status}">
+      <span class="status-dot ${m.status}"></span>
+      <span class="name">${escapeHtml(m.name)}</span>
+      <span class="workload">${w.open} open · ${w.pct}%</span>
+      <span class="bar"><i style="width:${w.pct}%"></i></span>
+    </div>`;
+  }).join('');
+  const ownerPickerHTML = devLocked
+    ? `<div class="owner-picker disabled"><div class="owner-trigger"><span class="status-dot ${cur.status}"></span><span class="name">${escapeHtml(cur.name)}</span></div><input type="hidden" id="to" value="${cur.id}" /></div>`
+    : `<div class="owner-picker" id="ownerPicker">
+        <button type="button" class="owner-trigger" id="ownerTrigger">
+          <span class="status-dot ${cur.status}"></span>
+          <span class="name">${escapeHtml(cur.name)}</span>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="owner-menu" id="ownerMenu">${ownerOpts}</div>
+        <input type="hidden" id="to" value="${cur.id}" />
+      </div>`;
+
+  // Segmented Status control — each button shows column + live task count
+  const statusSegs = state.tasks.columns.map((col) => {
+    const n = state.tasks.tasks.filter((t) => t.status === col && t.id !== task.id).length;
+    return `<button type="button" class="seg-btn ${col === task.status ? 'active' : ''}" data-val="${col}" ${devLocked ? 'disabled' : ''}>
+      <span class="seg-label">${col}</span><span class="seg-count">${n}</span>
+    </button>`;
+  }).join('');
+  const statusSegHTML = devLocked
+    ? `<div class="seg-group seg-status" role="radiogroup">${statusSegs}</div><input type="hidden" id="ts" value="${task.status}" />`
+    : `<div class="seg-group seg-status" id="tsGroup" role="radiogroup">${statusSegs}</div><input type="hidden" id="ts" value="${task.status}" />`;
+
+  // Segmented Priority control — colored by urgency
+  const priSegs = state.tasks.priorities.map((p) =>
+    `<button type="button" class="seg-btn ${p === task.priority ? 'active' : ''}" data-val="${p}">${p}</button>`
+  ).join('');
+  const prioritySegHTML = `<div class="seg-group seg-priority" id="tpGroup" role="radiogroup">${priSegs}</div><input type="hidden" id="tp" value="${task.priority}" />`;
 
   modal(`<h3>${isNew ? 'New task' : 'Task'}</h3>
     <input id="tt" class="title-input" placeholder="What needs to be done?" value="${escapeHtml(task.title)}" autocomplete="off" />
     <div class="modal-divider"></div>
-    <label>Owner</label><select id="to" ${devLocked ? 'disabled' : ''}>${members}</select>
+    <label>Owner</label>${ownerPickerHTML}
     <div class="grid-2">
-      <div><label>Status</label><select id="ts" ${devLocked ? 'disabled' : ''}>${opt(state.tasks.columns, task.status)}</select></div>
-      <div><label>Priority</label><select id="tp">${opt(state.tasks.priorities, task.priority)}</select></div>
+      <div><label>Status</label>${statusSegHTML}</div>
+      <div><label>Priority</label>${prioritySegHTML}</div>
     </div>
     <label>Deadline</label><input id="td" type="date" value="${task.deadline || ''}" />
     ${devLocked ? '<div class="muted small">Owner and status are fixed for developer-added tasks. Lead will review.</div>' : ''}
@@ -77,6 +114,42 @@ export function openTask(t, col) {
   titleInput.focus();
   // for edit-mode, select-all so user can immediately retype
   if (!isNew) titleInput.select();
+
+  // Segmented controls: click to set + sync hidden input
+  const wireSeg = (groupId, hiddenId) => {
+    const g = document.getElementById(groupId);
+    if (!g) return;
+    g.querySelectorAll('.seg-btn:not([disabled])').forEach((btn) => {
+      btn.onclick = () => {
+        g.querySelectorAll('.seg-btn').forEach((b) => b.classList.toggle('active', b === btn));
+        document.getElementById(hiddenId).value = btn.dataset.val;
+      };
+    });
+  };
+  wireSeg('tsGroup', 'ts');
+  wireSeg('tpGroup', 'tp');
+
+  // Owner picker — wire up only if not locked. AbortController cleans up
+  // document-level listeners on close (no leak across modal opens).
+  if (!devLocked) {
+    const trigger = document.getElementById('ownerTrigger');
+    const menu = document.getElementById('ownerMenu');
+    const hidden = document.getElementById('to');
+    const ac = new AbortController();
+    const close = () => { ac.abort(); menu.classList.remove('open'); };
+    trigger.onclick = (e) => { e.stopPropagation(); menu.classList.toggle('open'); };
+    menu.querySelectorAll('.owner-option').forEach((opt) => {
+      opt.onclick = () => {
+        hidden.value = opt.dataset.id;
+        trigger.querySelector('.name').textContent = opt.dataset.name;
+        trigger.querySelector('.status-dot').className = `status-dot ${opt.dataset.status}`;
+        menu.querySelectorAll('.owner-option').forEach((o) => o.classList.toggle('selected', o.dataset.id === opt.dataset.id));
+        close();
+      };
+    });
+    document.addEventListener('click', (e) => { if (!e.target.closest('#ownerPicker')) close(); }, { signal: ac.signal });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); }, { signal: ac.signal });
+  }
 
   document.getElementById('tcancel').onclick = closeModal;
 
