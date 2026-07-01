@@ -581,9 +581,12 @@ function viewManage(){
       if(!newName||!newUn) return toast("Name and username required");
       d.name=newName; d.username=newUn;
       if(p) d.passwordHash = await sha256(p);
-      await writeFile('auth.json', state.auth);
-      // also sync name in team.json if a member with same id exists
-      const m = state.team.members.find(m=>m.id===d.id); if(m){ m.name=newName; await writeFile('team.json', state.team); }
+      const m = state.team.members.find(m=>m.id===d.id); if(m){ m.name=newName; }
+      // single PATCH with both files to avoid 409 race
+      await patchGist(currentUserToken(), {
+        "auth.json": { content: JSON.stringify(state.auth,null,2) },
+        "team.json": { content: JSON.stringify(state.team,null,2) }
+      });
       toast("Saved "+newName);
       await getGist(); render();
     };
