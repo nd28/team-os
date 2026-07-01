@@ -84,7 +84,7 @@
 const GITHUB_API = "https://api.github.com";
 let GIST_ID = "";
 let state = { auth:null, team:null, tasks:null, leaves:null, pending:null, user:null, raw:null };
-const LS = { token:(u)=>`tos_token_${u}`, pass:(u)=>`tos_pass_${u}`, gist:"tos_gist_id", loc:"tos_lastloc" };
+const LS = { token:(u)=>`tos_token_${u}`, pass:(u)=>`tos_pass_${u}`, gist:"tos_gist_id", loc:()=>"tos_lastloc" };
 
 /* ---------- icons (Nucleo-style inline SVGs, swappable w/ official pack) ---------- */
 const IC = {
