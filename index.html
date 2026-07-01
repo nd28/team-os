@@ -446,8 +446,8 @@ function viewTeam(){
       <div class="row"><b>${escapeHtml(m.name)}</b><div class="spacer"></div><span class="status ${onLeave?'on-leave':m.status}"><span class="dot"></span>${onLeave?'on leave':m.status}</span></div>
       <div class="muted small">${escapeHtml(m.responsibilities||'')}</div>
       <div class="small" style="margin-top:6px">${IC.loc} ${m.location?`<a href="https://www.openstreetmap.org/?mlat=${m.location.lat}&mlon=${m.location.lng}#map=12/${m.location.lat}/${m.location.lng}" target="_blank">${m.location.lat},${m.location.lng}</a>`:'—'} · last seen ${m.lastSeen?timeAgo(m.lastSeen):'—'}</div>
-      <div class="bar"><i style="width:${w.pct}%"></i></div>
-      <div class="muted small">${w.open} open task(s)</div>
+      <div class="bar"><i style="width:${m.workload||0}%"></i></div>
+      <div class="muted small">${m.workload||0}% load · ${w.open} open task(s)</div>
       ${isLead()?`<details><summary class="small">edit</summary>
         <label>Responsibilities</label><input class="med-r" value="${escapeHtml(m.responsibilities||'')}" />
         <label>Workload %</label><input class="med-w" type="number" min="0" max="100" value="${m.workload}" />
