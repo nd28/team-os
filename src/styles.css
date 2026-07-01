@@ -196,6 +196,17 @@ nav.tabs button.active::after{transform:scaleX(1)}
 .modal .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
 .modal .grid-2 > div{display:flex;flex-direction:column;min-width:0}
 .modal .grid-2 label{margin-top:0}
+/* On narrow viewports the grid-2 column gets too tight to fit 4 status /
+   3 priority pills in a row. Stack them vertically and let each pill use
+   the full width — also collapses the grid to a single column so the two
+   segmented groups don't squish each other. */
+@media(max-width:560px){
+  .modal .grid-2{grid-template-columns:1fr;gap:8px}
+  .seg-group{flex-direction:column;align-items:stretch;padding:4px;min-height:0}
+  .seg-group .seg-btn{flex:1 1 auto;justify-content:space-between;min-height:34px;padding:8px 12px}
+  .seg-group .seg-btn .seg-label{font-weight:600}
+  .seg-group .seg-btn .seg-count{font-size:11px;opacity:.85;min-width:18px}
+}
 
 /* Toast */
 .toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(8px);opacity:0;background:var(--glass-bg);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);border:1px solid var(--glass-border);padding:11px 18px;border-radius:11px;z-index:30;max-width:90%;font-size:14px;font-weight:500;box-shadow:var(--glass-shadow);animation:toastIn .25s var(--ease) forwards}
