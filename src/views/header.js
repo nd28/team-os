@@ -57,8 +57,10 @@ export function render() {
     document.getElementById('btnCheckin').onclick = () => { closeUserMenu(); checkin(); };
     document.getElementById('btnLogout').onclick = () => { closeUserMenu(); state.user = null; localStorage.removeItem('tos_session'); import('../main.js').then((m) => m.render()); };
   } else {
-    who.innerHTML = `${rlBadgeHTML}${themeBtnHTML}<span class="muted small hide-on-mobile" style="margin-left:4px">not logged in</span>`;
+    who.innerHTML = `${rlBadgeHTML}${themeBtnHTML}`;
   }
+  // brand is only useful for the login screen — avatar handles identity when logged in
+  document.querySelector('header.top')?.classList.toggle('compact', !!state.user);
   renderRateLimit();
   const tb = document.getElementById('themeBtn');
   if (tb) tb.onclick = () => setTheme(currentTheme() === 'dark' ? 'light' : 'dark');
