@@ -83,13 +83,15 @@ export function openTask(t, col) {
   const devLocked = !isLead() && isNew; // developer adding: lock owner+status
   const members = state.team.members.map((m) => `<option value="${m.id}" ${m.id === task.owner ? 'selected' : ''}>${escapeHtml(m.name)}</option>`).join('');
   modal(`<h3>${isNew ? 'New task' : 'Task'}</h3>
-    <label>Title</label><input id="tt" value="${escapeHtml(task.title)}" />
+    <label>Title</label><input id="tt" value="${escapeHtml(task.title)}" autocomplete="off" />
     <label>Owner</label><select id="to" ${devLocked ? 'disabled' : ''}>${members}</select>
-    <div class="row" style="gap:10px"><div style="flex:1"><label>Status</label><select id="ts" ${devLocked ? 'disabled' : ''}>${opts(state.tasks.columns, task.status)}</select></div>
-    <div style="flex:1"><label>Priority</label><select id="tp">${opts(state.tasks.priorities, task.priority)}</select></div></div>
-    <label>Deadline (YYYY-MM-DD)</label><input id="td" type="date" value="${task.deadline || ''}" />
+    <div class="grid-2">
+      <div><label>Status</label><select id="ts" ${devLocked ? 'disabled' : ''}>${opts(state.tasks.columns, task.status)}</select></div>
+      <div><label>Priority</label><select id="tp">${opts(state.tasks.priorities, task.priority)}</select></div>
+    </div>
+    <label>Deadline</label><input id="td" type="date" value="${task.deadline || ''}" />
     ${devLocked ? '<div class="muted small">Owner and status are fixed for developer-added tasks. Lead will review.</div>' : ''}
-    <div class="row" style="margin-top:12px">
+    <div class="row actions">
       ${isNew ? '' : '<button class="danger sm" id="tdel">Delete</button>'}
       <div class="spacer"></div>
       <button class="sm" id="tcancel">Cancel</button>
@@ -97,7 +99,10 @@ export function openTask(t, col) {
     </div>`);
 
   document.getElementById('tcancel').onclick = closeModal;
-  document.getElementById('tsave').onclick = async () => {
+  const saveBtn = document.getElementById('tsave');
+  let saving = false;
+  saveBtn.onclick = async () => {
+    if (saving) return; // guard: prevent double-click race
     const payload = {
       id: task.id,
       title: val('tt').trim(),
@@ -107,6 +112,10 @@ export function openTask(t, col) {
       deadline: val('td'),
     };
     if (!payload.title) return toast('Title required');
+    saving = true;
+    saveBtn.disabled = true;
+    const originalLabel = saveBtn.textContent;
+    saveBtn.textContent = 'Saving…';
     try {
       if (isNew) {
         await proposeChange({
@@ -131,11 +140,14 @@ export function openTask(t, col) {
           toast('Only the lead can edit task fields. Status change sent for approval.');
         }
       }
+      closeModal();
     } catch (e) {
       toast(e.message);
-      return;
+      // only re-enable on failure — success closes the modal anyway
+      saving = false;
+      saveBtn.disabled = false;
+      saveBtn.textContent = originalLabel;
     }
-    closeModal();
   };
 
   if (!isNew) {
