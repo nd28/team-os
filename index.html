@@ -137,7 +137,8 @@ async function loginLead(username, token){
   if(!r.ok) throw new Error("Token invalid or no gist access");
   localStorage.setItem(LS.token(username), token);
   state.user = { id:username, username, name: state.auth.lead.name||username, role:'lead', rights:state.auth.lead.rights };
-  await checkin();
+  render();
+  checkin();
 }
 async function loginDev(username, password, token){
   const d = devByUsername(username);
@@ -152,18 +153,22 @@ async function loginDev(username, password, token){
   }
   if(token) localStorage.setItem(LS.token(username), token);
   state.user = { id:d.id, username:d.username, name:d.name, role:'developer', rights:d.rights };
-  await checkin();
+  render();
+  checkin();
 }
-function logout(){ state.user=null; localStorage.removeItem; render(); }
+function logout(){ state.user=null; render(); }
 
 /* ---------- geolocation ---------- */
 function getLoc(){
   return new Promise(res=>{
     if(!navigator.geolocation) return res(null);
+    let done=false; const finish=v=>{ if(!done){done=true; res(v);} };
     navigator.geolocation.getCurrentPosition(
-      p => res({lat:p.coords.latitude.toFixed(3), lng:p.coords.longitude.toFixed(3), t:Date.now()}),
-      e => { toast("Location denied: "+e.message); res(null); }, {timeout:8000, enableHighAccuracy:false}
+      p => finish({lat:p.coords.latitude.toFixed(3), lng:p.coords.longitude.toFixed(3), t:Date.now()}),
+      e => { if(e.code!==1) toast("Location unavailable: "+e.message); finish(null); },
+      {timeout:8000, enableHighAccuracy:false, maximumAge:60000}
     );
+    setTimeout(()=>finish(null), 9000);
   });
 }
 async function checkin(){
