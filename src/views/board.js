@@ -14,23 +14,19 @@ export const workloadFor = (id) => {
 
 export function viewBoard() {
   const wrap = el('<div></div>');
-  const row = el('<div class="card"><div class="row" style="gap:14px"></div></div>').firstChild;
-  state.team.members.forEach((m) => {
-    const w = workloadFor(m.id);
-    row.appendChild(el(`<div class="status ${m.status}" title="${m.name}"><span class="dot"></span>${m.name.split(' ')[0]} <span class="muted small">· ${w.open} open</span></div>`));
-  });
-  wrap.appendChild(row.parentNode);
-
   const grid = el('<div class="grid kanban"></div>');
   state.tasks.columns.forEach((col) => {
     const c = el(`<div class="col"><h3>${col} <span class="muted">${state.tasks.tasks.filter((t) => t.status === col).length}</span></h3></div>`);
     state.tasks.tasks.filter((t) => t.status === col).forEach((t) => {
       const owner = memberById(t.owner);
       const due = dueInfo(t.deadline);
+      const ownerHTML = owner
+        ? `<span class="owner-badge" title="${escapeHtml(owner.name)} — ${owner.status}"><span class="status-dot ${owner.status}"></span>${escapeHtml(owner.name.split(' ')[0])}</span>`
+        : '<span class="owner-badge">—</span>';
       const card = el(`<div class="task">
         <div class="t">${escapeHtml(t.title)}</div>
         <div class="m">
-          <span class="badge">${owner ? escapeHtml(owner.name.split(' ')[0]) : '—'}</span>
+          ${ownerHTML}
           <span class="pill ${t.priority}">${t.priority}</span>
           <span class="due ${due.cls}">${IC.clock} ${due.txt}</span>
         </div></div>`);
@@ -60,7 +56,8 @@ export function openTask(t, col) {
   const members = state.team.members.map((m) => `<option value="${m.id}" ${m.id === task.owner ? 'selected' : ''}>${escapeHtml(m.name)}</option>`).join('');
 
   modal(`<h3>${isNew ? 'New task' : 'Task'}</h3>
-    <label>Title</label><input id="tt" value="${escapeHtml(task.title)}" autocomplete="off" />
+    <input id="tt" class="title-input" placeholder="What needs to be done?" value="${escapeHtml(task.title)}" autocomplete="off" />
+    <div class="modal-divider"></div>
     <label>Owner</label><select id="to" ${devLocked ? 'disabled' : ''}>${members}</select>
     <div class="grid-2">
       <div><label>Status</label><select id="ts" ${devLocked ? 'disabled' : ''}>${opt(state.tasks.columns, task.status)}</select></div>
@@ -74,6 +71,12 @@ export function openTask(t, col) {
       <button class="sm" id="tcancel">Cancel</button>
       <button class="primary sm" id="tsave">Save</button>
     </div>`);
+
+  // Title is the hero — focus it the instant the modal opens
+  const titleInput = document.getElementById('tt');
+  titleInput.focus();
+  // for edit-mode, select-all so user can immediately retype
+  if (!isNew) titleInput.select();
 
   document.getElementById('tcancel').onclick = closeModal;
 
