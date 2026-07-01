@@ -1,0 +1,591 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<meta name="theme-color" content="#0d1117" />
+<title>Team OS</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c2230; --border:#30363d;
+    --txt:#e6edf3; --mut:#8b949e; --acc:#2f81f7; --ok:#3fb950; --warn:#d29922; --bad:#f85149;
+    --pri:#a371f7; --radius:12px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--txt);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  a{color:var(--acc);text-decoration:none}
+  button{font:inherit;cursor:pointer;border:1px solid var(--border);background:var(--panel2);color:var(--txt);border-radius:8px;padding:8px 12px}
+  button.primary{background:var(--acc);border-color:transparent;color:#fff}
+  button.danger{background:var(--bad);border-color:transparent;color:#fff}
+  button.sm{padding:5px 9px;font-size:13px}
+  input,select,textarea{font:inherit;background:#0b0f15;color:var(--txt);border:1px solid var(--border);border-radius:8px;padding:8px 10px;width:100%}
+  label{color:var(--mut);font-size:12px;display:block;margin:8px 0 3px}
+  .wrap{max-width:1100px;margin:0 auto;padding:12px}
+  header.top{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg);z-index:5}
+  header.top .brand{display:flex;align-items:center;gap:8px;font-weight:700}
+  header.top .who{margin-left:auto;color:var(--mut);font-size:13px;display:flex;align-items:center;gap:8px}
+  .avatar{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--pri));display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff}
+  nav.tabs{display:flex;gap:6px;padding:8px 12px;border-bottom:1px solid var(--border);overflow:auto}
+  nav.tabs button{white-space:nowrap;background:transparent;border-color:transparent;color:var(--mut)}
+  nav.tabs button.active{color:var(--txt);box-shadow:inset 0 -2px 0 var(--acc)}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin:10px 0}
+  .grid{display:grid;gap:10px}
+  .kanban{grid-template-columns:repeat(4,1fr)}
+  @media(max-width:760px){.kanban{grid-template-columns:1fr}}
+  .col{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:8px;min-height:80px}
+  .col h3{margin:4px 6px 8px;font-size:13px;color:var(--mut);text-transform:uppercase;letter-spacing:.04em;display:flex;justify-content:space-between}
+  .task{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:9px;margin:6px 0}
+  .task .t{font-weight:600}
+  .task .m{font-size:12px;color:var(--mut);margin-top:6px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .badge{font-size:11px;padding:2px 7px;border-radius:20px;background:var(--panel);border:1px solid var(--border)}
+  .pill{font-size:11px;padding:2px 8px;border-radius:20px}
+  .pill.high{background:rgba(248,81,73,.15);color:var(--bad)} .pill.medium{background:rgba(210,153,34,.15);color:var(--warn)} .pill.low{background:rgba(63,185,80,.15);color:var(--ok)}
+  .due.over{color:var(--bad)} .due.soon{color:var(--warn)}
+  .meters{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
+  .meter .bar{height:8px;border-radius:6px;background:#0b0f15;overflow:hidden;margin-top:5px}
+  .meter .bar > i{display:block;height:100%;background:linear-gradient(90deg,var(--ok),var(--warn),var(--bad))}
+  .status .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:middle}
+  .status.active .dot{background:var(--ok)} .status.remote .dot{background:var(--acc)} .status.away .dot{background:var(--warn)} .status.on-leave .dot{background:var(--bad)}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .row > *{flex:0 0 auto}
+  .spacer{flex:1 1 auto}
+  .empty{color:var(--mut);font-style:italic;padding:6px}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:14px;z-index:20}
+  .modal .box{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px;max-width:460px;width:100%;max-height:86vh;overflow:auto}
+  .toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--panel2);border:1px solid var(--border);padding:10px 14px;border-radius:10px;z-index:30;max-width:90%}
+  .ic{width:18px;height:18px;display:inline-block;vertical-align:-3px}
+  .hide{display:none!important}
+  .muted{color:var(--mut)} .small{font-size:12px}
+  .leavecard{display:flex;justify-content:space-between;gap:10px;align-items:center}
+  details summary{cursor:pointer;color:var(--mut);padding:4px 0}
+  .line{border-top:1px solid var(--border);margin:10px 0}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.4"/><path d="M3 19c0-3 2.7-5 6-5s6 2 6 5"/><path d="M14 18c.4-2 2-3.2 4-3.2s3.6 1.2 4 3.2"/></svg>
+    Team OS
+  </div>
+  <div class="who" id="who"></div>
+</header>
+<nav class="tabs" id="tabs"></nav>
+<div class="wrap" id="view"></div>
+<div id="modal"></div>
+
+<script>
+"use strict";
+/* ========================= Team OS — single-file app =========================
+ * Backend: a PUBLIC GitHub Gist (read for all devs, writes gated by PAT).
+ * Lead role: uses a GitHub PAT (gist scope) to write directly + approve.
+ * Dev role: uses own GitHub PAT (gist scope) to write pending approvals only.
+ * Gist id is passed in the URL hash: #gist=<id>  (so the id is "encoded" in URL)
+ */
+const GITHUB_API = "https://api.github.com";
+let GIST_ID = "";
+let state = { auth:null, team:null, tasks:null, leaves:null, pending:null, user:null, raw:null };
+const LS = { token:(u)=>`tos_token_${u}`, pass:(u)=>`tos_pass_${u}`, gist:"tos_gist_id", loc:"tos_lastloc" };
+
+/* ---------- icons (Nucleo-style inline SVGs, swappable w/ official pack) ---------- */
+const IC = {
+  board:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="6" height="16" rx="1"/><rect x="10.5" y="4" width="6" height="11" rx="1"/><rect x="18" y="4" width="3" height="7" rx="1"/></svg>',
+  team:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.4"/><path d="M3 19c0-3 2.7-5 6-5s6 2 6 5"/><path d="M14 18c.4-2 2-3.2 4-3.2s3.6 1.2 4 3.2"/></svg>',
+  leave:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9h18M3 9l9-6 9 6M5 9v11h14V9"/></svg>',
+  approve:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>',
+  pin:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 17v5M9 3h6l-1 6 3 3H7l3-3-1-6z"/></svg>',
+  loc:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-5.5 7-11a7 7 0 10-14 0c0 5.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>',
+  logout:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>',
+  clock:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+};
+function el(html){const t=document.createElement('template');t.innerHTML=html.trim();return t.content.firstChild;}
+function toast(m){const d=el(`<div class="toast"></div>`);d.textContent=m;document.body.appendChild(d);setTimeout(()=>d.remove(),2600);}
+function uid(){return 'x'+Math.random().toString(36).slice(2,8)+Date.now().toString(36).slice(-3);}
+
+/* ---------- crypto ---------- */
+async function sha256(s){const b=new TextEncoder().encode(s);const h=await crypto.subtle.digest('SHA-256',b);return [...new Uint8Array(h)].map(x=>x.toString(16).padStart(2,'0')).join('');}
+
+/* ---------- gist I/O ---------- */
+async function getGist(){
+  const r = await fetch(`${GITHUB_API}/gists/${GIST_ID}`);
+  if(!r.ok) throw new Error("Gist read failed: "+r.status);
+  const j = await r.json();
+  state.raw = j;
+  const parse = f => { try { return JSON.parse(j.files[f].content); } catch(e){ return null; } };
+  state.auth = parse("auth.json"); state.team = parse("team.json");
+  state.tasks = parse("tasks.json"); state.leaves = parse("leaves.json");
+  state.pending = parse("pending_approvals.json");
+}
+async function patchGist(token, files){
+  const body = { files };
+  const r = await fetch(`${GITHUB_API}/gists/${GIST_ID}`, {
+    method:"PATCH", headers:{Authorization:`Bearer ${token}`,"Accept":"application/vnd.github+json","Content-Type":"application/json"},
+    body: JSON.stringify(body)
+  });
+  if(!r.ok){ let m="Gist write failed: "+r.status; try{const e=await r.json();m+=" "+(e.message||"");}catch(_){} throw new Error(m); }
+  return r.json();
+}
+function writeFile(file, obj){ return patchGist(currentUserToken(), { [file]: { content: JSON.stringify(obj,null,2) } }); }
+
+/* ---------- auth ---------- */
+function memberById(id){ return state.team.members.find(m=>m.id===id); }
+function devByUsername(u){ return state.auth.developers.find(d=>d.username===u); }
+function isLead(){ return state.user && state.user.role==='lead'; }
+function currentUserToken(){ return localStorage.getItem(LS.token(state.user.username)) || ""; }
+async function loginLead(username, token){
+  // verify token works on this gist
+  const r = await fetch(`${GITHUB_API}/gists/${GIST_ID}`, {headers:{Authorization:`Bearer ${token}`}});
+  if(!r.ok) throw new Error("Token invalid or no gist access");
+  localStorage.setItem(LS.token(username), token);
+  state.user = { id:username, username, name: state.auth.lead.name||username, role:'lead', rights:state.auth.lead.rights };
+  await checkin();
+}
+async function loginDev(username, password, token){
+  const d = devByUsername(username);
+  if(!d) throw new Error("Unknown developer. Ask the lead to add you.");
+  // password set?
+  if(d.passwordHash){
+    const h = await sha256(password||"");
+    if(h !== d.passwordHash) throw new Error("Wrong password.");
+  } else {
+    // first dev login before lead set a password: accept any non-empty, lead must set later
+    if(!password) throw new Error("Lead has not set your password yet. Enter any temporary password to continue, then ask lead to set it.");
+  }
+  if(token) localStorage.setItem(LS.token(username), token);
+  state.user = { id:d.id, username:d.username, name:d.name, role:'developer', rights:d.rights };
+  await checkin();
+}
+function logout(){ state.user=null; localStorage.removeItem; render(); }
+
+/* ---------- geolocation ---------- */
+function getLoc(){
+  return new Promise(res=>{
+    if(!navigator.geolocation) return res(null);
+    navigator.geolocation.getCurrentPosition(
+      p => res({lat:p.coords.latitude.toFixed(3), lng:p.coords.longitude.toFixed(3), t:Date.now()}),
+      e => { toast("Location denied: "+e.message); res(null); }, {timeout:8000, enableHighAccuracy:false}
+    );
+  });
+}
+async function checkin(){
+  const loc = await getLoc();
+  if(loc) localStorage.setItem(LS.loc(), JSON.stringify(loc));
+  const m = memberById(state.user.id);
+  if(!m) return;
+  m.location = loc; m.lastSeen = new Date().toISOString();
+  if(state.user.role==='developer') m.status = m.status==='on-leave' ? 'on-leave' : 'remote';
+  // direct write (presence is real-time, not approval-gated — see ARCHITECTURE.md)
+  try { await writeFile("team.json", state.team); } catch(e){ toast(e.message); }
+  render();
+}
+
+/* ---------- approval flow ---------- */
+/* Developers cannot edit board data directly. They propose a change which the lead approves. */
+async function proposeChange(req){
+  // req: {type, file, summary, apply: <function(state)=>mutated file obj>, payload}
+  if(isLead()){
+    // lead applies directly
+    req.apply(state);
+    await writeFile(req.file, state[req.fileKey]);
+    toast("Applied directly (lead).");
+  } else {
+    // developer writes a pending request (needs own PAT)
+    if(!currentUserToken()) { openTokenPrompt(); throw new Error("Need your GitHub token to submit changes for approval."); }
+    const entry = {
+      id: uid(), type:req.type, file:req.file, fileKey:req.fileKey, by:state.user.id, byName:state.user.name,
+      createdAt:new Date().toISOString(), summary:req.summary, payload:req.payload
+    };
+    state.pending.requests.push(entry);
+    try {
+      await writeFile("pending_approvals.json", state.pending);
+      toast("Submitted for lead approval.");
+    } catch(e){ state.pending.requests.pop(); toast(e.message); throw e; }
+  }
+  await getGist(); render();
+}
+async function approveChange(id){
+  const r = state.pending.requests.find(x=>x.id===id); if(!r) return;
+  // apply the described change to current state
+  applyRequestToState(r);
+  state.pending.requests = state.pending.requests.filter(x=>x.id!==id);
+  await patchGist(currentUserToken(), {
+    [r.file]: { content: JSON.stringify(state[r.fileKey],null,2) },
+    pending_approvals.json: { content: JSON.stringify(state.pending,null,2) }
+  });
+  toast("Approved & applied.");
+  await getGist(); render();
+}
+async function rejectChange(id, reason){
+  const r = state.pending.requests.find(x=>x.id===id); if(!r) return;
+  r.status="rejected"; r.rejectReason=reason||""; r.resolvedAt=new Date().toISOString();
+  // keep a short history? for minimal: just remove
+  state.pending.requests = state.pending.requests.filter(x=>x.id!==id);
+  await writeFile("pending_approvals.json", state.pending);
+  toast("Rejected.");
+  await getGist(); render();
+}
+/* reconstruct mutation from payload (lead's device applies it) */
+function applyRequestToState(r){
+  if(r.type==="task_status"){
+    const t = state.tasks.tasks.find(t=>t.id===r.payload.taskId);
+    if(t) t.status = r.payload.status;
+  } else if(r.type==="task_add"){
+    state.tasks.tasks.push(r.payload.task);
+  } else if(r.type==="leave_request"){
+    state.leaves.leaves.push(r.payload.leave);
+  } else if(r.type==="profile_update"){
+    const m = memberById(r.payload.memberId);
+    if(m){ if(r.payload.responsibilities!=null)m.responsibilities=r.payload.responsibilities; if(r.payload.workload!=null)m.workload=r.payload.workload; if(r.payload.status!=null)m.status=r.payload.status; }
+  }
+}
+
+/* ---------- UI scaffolding ---------- */
+const TABS = [
+  {id:'board', label:'Board', icon:'board', show:()=>true},
+  {id:'team', label:'Team', icon:'team', show:()=>true},
+  {id:'leaves', label:'Leaves', icon:'leave', show:()=>true},
+  {id:'approvals', label:'Approvals', icon:'approve', show:()=>isLead()},
+  {id:'manage', label:'Manage', icon:'pin', show:()=>isLead()},
+];
+let currentTab = 'board';
+
+function render(){
+  const who = document.getElementById('who');
+  if(state.user){
+    who.innerHTML = `<span class="status active"><span class="dot"></span>${state.user.name}</span>
+      <button class="sm" id="btnCheckin">${IC.loc} Check-in</button>
+      <button class="sm" id="btnLogout">${IC.logout}</button>`;
+    document.getElementById('btnCheckin').onclick=checkin;
+    document.getElementById('btnLogout').onclick=()=>{ state.user=null; render(); };
+  } else { who.innerHTML = `<span class="muted small">not logged in</span>`; }
+
+  const tabs = document.getElementById('tabs');
+  tabs.innerHTML = "";
+  TABS.filter(t=>t.show()).forEach(t=>{
+    const b = el(`<button>${IC[t.icon]} ${t.label}</button>`);
+    if(t.id===currentTab) b.classList.add('active');
+    b.onclick=()=>{ currentTab=t.id; render(); };
+    tabs.appendChild(b);
+  });
+  const v = document.getElementById('view');
+  if(!state.user){ v.innerHTML = loginHtml(); bindLogin(); return; }
+  if(!state.team){ v.innerHTML = `<div class="empty">Loading…</div>`; return; }
+  v.innerHTML = "";
+  if(currentTab==='board') v.appendChild(viewBoard());
+  else if(currentTab==='team') v.appendChild(viewTeam());
+  else if(currentTab==='leaves') v.appendChild(viewLeaves());
+  else if(currentTab==='approvals') v.appendChild(viewApprovals());
+  else if(currentTab==='manage') v.appendChild(viewManage());
+}
+
+/* ---------- login view ---------- */
+function loginHtml(){
+  return el(`<div class="card" style="max-width:420px;margin:30px auto">
+    <h2 style="margin-top:0">Sign in to Team OS</h2>
+    <p class="muted small">Team board • Kanban • Workload • Leaves • Approvals</p>
+    <div class="line"></div>
+    <label>I am the…</label>
+    <div class="row">
+      <button id="rLead" class="primary">Team Lead</button>
+      <button id="rDev">Developer</button>
+    </div>
+    <div id="form" class="hide" style="margin-top:12px"></div>
+  </div>`);
+}
+function bindLogin(){
+  const form = document.getElementById('form');
+  document.getElementById('rLead').onclick = ()=>{
+    form.classList.remove('hide');
+    form.innerHTML = `
+      <label>Lead username</label><input id="lu" value="nd28" />
+      <label>GitHub Personal Access Token <span class="muted">(gist scope; stored only in your browser)</span></label>
+      <input id="lt" type="password" placeholder="ghp_…" />
+      <button class="primary" id="lgo" style="margin-top:12px;width:100%">Sign in as Lead</button>
+      <p class="muted small" style="margin-top:10px">Create a token at github.com/settings/tokens → scopes: <b>gist</b>.</p>`;
+    document.getElementById('lgo').onclick = async ()=>{ try{ await loginLead(val('lu'), val('lt').trim()); toast("Welcome, lead."); }catch(e){toast(e.message);} };
+  };
+  document.getElementById('rDev').onclick = ()=>{
+    form.classList.remove('hide');
+    form.innerHTML = `
+      <label>Developer username <span class="muted">(set by lead)</span></label><input id="du" placeholder="dev1" />
+      <label>Password</label><input id="dp" type="password" placeholder="set by lead" />
+      <label>Your GitHub token <span class="muted">(gist scope; needed to submit changes for approval)</span></label>
+      <input id="dt" type="password" placeholder="ghp_…" />
+      <button class="primary" id="dgo" style="margin-top:12px;width:100%">Sign in as Developer</button>
+      <p class="muted small" style="margin-top:10px">Your token only writes <b>pending approvals</b> — never board data directly. Lead approves everything.</p>`;
+    document.getElementById('dgo').onclick = async ()=>{ try{ await loginDev(val('du').trim(), val('dp'), val('dt').trim()); toast("Welcome, "+(state.user?.name||'dev')); }catch(e){toast(e.message);} };
+  };
+}
+function val(id){ const e=document.getElementById(id); return e?e.value:""; }
+function openTokenPrompt(){
+  modal(`<h3>Token required</h3><p class="muted small">Enter your GitHub token (gist scope). It stays in your browser.</p>
+    <input id="tk" type="password" placeholder="ghp_…" />
+    <button class="primary" id="tks" style="margin-top:10px;width:100%">Save</button>`);
+  document.getElementById('tks').onclick=()=>{ const t=val('tk').trim(); if(t){ localStorage.setItem(LS.token(state.user.username), t); closeModal(); } };
+}
+
+/* ---------- Board view ---------- */
+function workloadFor(id){
+  const mine = state.tasks.tasks.filter(t=>t.owner===id && t.status!=='done');
+  let n=mine.length; // open tasks
+  const w = Math.min(100, n*20);
+  return {open:n, pct:w, mine};
+}
+function dueInfo(d){
+  if(!d) return {cls:'',txt:'—'};
+  const today=new Date(); today.setHours(0,0,0,0);
+  const dd=new Date(d); dd.setHours(0,0,0,0);
+  const days=Math.round((dd-today)/86400000);
+  if(days<0) return {cls:'over',txt:`overdue ${-days}d`};
+  if(days===0) return {cls:'soon',txt:'today'};
+  if(days<=2) return {cls:'soon',txt:`in ${days}d`};
+  return {cls:'',txt:`${days}d`};
+}
+function viewBoard(){
+  const wrap = el(`<div></div>`);
+  // team presence strip
+  const strip = el(`<div class="card"><div class="row" style="gap:14px"></div></div>`);
+  const row = strip.firstChild;
+  state.team.members.forEach(m=>{
+    const w = workloadFor(m.id);
+    const d = el(`<div class="status ${m.status}" title="${m.name}"><span class="dot"></span>${m.name.split(' ')[0]} <span class="muted small">· ${w.open} open</span></div>`);
+    row.appendChild(d);
+  });
+  wrap.appendChild(strip);
+
+  // kanban
+  const grid = el(`<div class="grid kanban"></div>`);
+  state.tasks.columns.forEach(col=>{
+    const items = state.tasks.tasks.filter(t=>t.status===col);
+    const c = el(`<div class="col"><h3>${col} <span class="muted">${items.length}</span></h3></div>`);
+    items.forEach(t=>{
+      const owner = memberById(t.owner);
+      const due = dueInfo(t.deadline);
+      const card = el(`<div class="task">
+        <div class="t">${escapeHtml(t.title)}</div>
+        <div class="m">
+          <span class="badge">${owner?escapeHtml(owner.name.split(' ')[0]):'—'}</span>
+          <span class="pill ${t.priority}">${t.priority}</span>
+          <span class="due ${due.cls}">${IC.clock} ${due.txt}</span>
+        </div></div>`);
+      card.onclick = ()=>openTask(t);
+      c.appendChild(card);
+    });
+    if(isLead()){
+      const add = el(`<button class="sm" style="margin:6px 0">+ add</button>`);
+      add.onclick = ()=>openTask(null, col);
+      c.appendChild(add);
+    }
+    grid.appendChild(c);
+  });
+  wrap.appendChild(grid);
+  // help-offer nudge
+  const stuck = state.tasks.tasks.filter(t=>t.status==='in-progress' && dueInfo(t.deadline).cls);
+  if(stuck.length){
+    const n = el(`<div class="card small">⚠ ${stuck.length} task(s) nearing/over deadline — offer help to the owner.</div>`);
+    wrap.appendChild(n);
+  }
+  return wrap;
+}
+function openTask(t, col){
+  const isNew = !t;
+  const task = t || {id:uid(), title:'', owner:state.user.id, status:col||'backlog', priority:'medium', deadline:''};
+  const opts = (arr,sel)=> arr.map(o=>`<option ${o===sel?'selected':''}>${o}</option>`).join('');
+  const members = state.team.members.map(m=>`<option value="${m.id}" ${m.id===task.owner?'selected':''}>${escapeHtml(m.name)}</option>`).join('');
+  modal(`<h3>${isNew?'New task':'Task'}</h3>
+    <label>Title</label><input id="tt" value="${escapeHtml(task.title)}" />
+    <label>Owner</label><select id="to">${members}</select>
+    <div class="row" style="gap:10px"><div style="flex:1"><label>Status</label><select id="ts">${opts(state.tasks.columns,task.status)}</select></div>
+    <div style="flex:1"><label>Priority</label><select id="tp">${opts(state.tasks.priorities,task.priority)}</select></div></div>
+    <label>Deadline (YYYY-MM-DD)</label><input id="td" type="date" value="${task.deadline||''}" />
+    <div class="row" style="margin-top:12px">
+      ${isNew?'':`<button class="danger sm" id="tdel">Delete</button>`}
+      <div class="spacer"></div>
+      <button class="sm" id="tcancel">Cancel</button>
+      <button class="primary sm" id="tsave">Save</button>
+    </div>`);
+  document.getElementById('tcancel').onclick=closeModal;
+  document.getElementById('tsave').onclick=async ()=>{
+    const payload = { id:task.id, title:val('tt').trim(), owner:val('to'), status:val('ts'), priority:val('tp'), deadline:val('td') };
+    if(!payload.title) return toast("Title required");
+    if(isNew){
+      await proposeChange({type:'task_add', file:'tasks.json', fileKey:'tasks', summary:`Add task "${payload.title}"`, payload:{task:payload}});
+    } else {
+      const orig = state.tasks.tasks.find(x=>x.id===task.id);
+      if(orig.status!==payload.status){
+        await proposeChange({type:'task_status', file:'tasks.json', fileKey:'tasks',
+          summary:`Move "${payload.title}" → ${payload.status}`, payload:{taskId:task.id, status:payload.status}});
+      }
+      // other field edits: lead only, applied directly
+      if(isLead()){
+        Object.assign(orig, payload);
+        await writeFile('tasks.json', state.tasks);
+        toast("Saved."); await getGist(); render();
+      } else if(orig.status===payload.status){
+        toast("Only the lead can edit task fields. Status change sent for approval.");
+      }
+      closeModal();
+    }
+    closeModal();
+  };
+  if(!isNew){ document.getElementById('tdel').onclick=async ()=>{
+    if(!isLead()) return toast("Only lead can delete tasks.");
+    state.tasks.tasks = state.tasks.tasks.filter(x=>x.id!==task.id);
+    await writeFile('tasks.json', state.tasks); toast("Deleted."); closeModal(); await getGist(); render();
+  }; }
+}
+
+/* ---------- Team view ---------- */
+function viewTeam(){
+  const wrap = el(`<div></div>`);
+  const meters = el(`<div class="card"><h3 style="margin-top:0">Workload & Ownership</h3><div class="meters"></div></div>`);
+  const mm = meters.querySelector('.meters');
+  state.team.members.forEach(m=>{
+    const w = workloadFor(m.id);
+    const onLeave = state.leaves.leaves.some(l=>l.member===m.id && l.status==='approved' && activeLeave(l));
+    const card = el(`<div class="meter card" style="margin:0">
+      <div class="row"><b>${escapeHtml(m.name)}</b><div class="spacer"></div><span class="status ${onLeave?'on-leave':m.status}"><span class="dot"></span>${onLeave?'on leave':m.status}</span></div>
+      <div class="muted small">${escapeHtml(m.responsibilities||'')}</div>
+      <div class="small" style="margin-top:6px">${IC.loc} ${m.location?`<a href="https://www.openstreetmap.org/?mlat=${m.location.lat}&mlon=${m.location.lng}#map=12/${m.location.lat}/${m.location.lng}" target="_blank">${m.location.lat},${m.location.lng}</a>`:'—'} · last seen ${m.lastSeen?timeAgo(m.lastSeen):'—'}</div>
+      <div class="bar"><i style="width:${w.pct}%"></i></div>
+      <div class="muted small">${w.open} open task(s)</div>
+      ${isLead()?`<details><summary class="small">edit</summary>
+        <label>Responsibilities</label><input class="med-r" value="${escapeHtml(m.responsibilities||'')}" />
+        <label>Workload %</label><input class="med-w" type="number" min="0" max="100" value="${m.workload}" />
+        <label>Status</label><select class="med-s">${state.team.statusOptions.map(o=>`<option ${o===m.status?'selected':''}>${o}</option>`).join('')}</select>
+        <button class="primary sm" class-id="${m.id}" style="margin-top:8px">Save member</button></details>`:''}
+    </div>`);
+    if(isLead()){
+      card.querySelector('button').onclick=async ()=>{
+        await proposeChange({type:'profile_update', file:'team.json', fileKey:'team',
+          summary:`Update profile for ${m.name}`,
+          payload:{memberId:m.id, responsibilities:card.querySelector('.med-r').value, workload:+card.querySelector('.med-w').value, status:card.querySelector('.med-s').value}});
+        closeModal();
+      };
+    }
+    mm.appendChild(card);
+  });
+  wrap.appendChild(meters);
+  // upcoming deadlines
+  const up = state.tasks.tasks.filter(t=>t.status!=='done' && t.deadline).sort((a,b)=>a.deadline.localeCompare(b.deadline));
+  const dl = el(`<div class="card"><h3 style="margin-top:0">Upcoming deadlines</h3></div>`);
+  if(!up.length) dl.appendChild(el(`<div class="empty">none</div>`));
+  up.forEach(t=>{ const o=memberById(t.owner); const d=dueInfo(t.deadline);
+    dl.appendChild(el(`<div class="row" style="margin:6px 0"><span>${escapeHtml(t.title)}</span><span class="badge">${o?escapeHtml(o.name.split(' ')[0]):'—'}</span><div class="spacer"></div><span class="due ${d.cls} small">${t.deadline} (${d.txt})</span></div>`)); });
+  wrap.appendChild(dl);
+  return wrap;
+}
+function activeLeave(l){ const today=new Date().toISOString().slice(0,10); return l.from<=today && l.to>=today; }
+function timeAgo(iso){ const s=(Date.now()-new Date(iso))/1000; if(s<60)return'just now'; if(s<3600)return Math.floor(s/60)+'m ago'; if(s<86400)return Math.floor(s/3600)+'h ago'; return Math.floor(s/86400)+'d ago'; }
+
+/* ---------- Leaves view ---------- */
+function viewLeaves(){
+  const wrap = el(`<div></div>`);
+  const card = el(`<div class="card"><h3 style="margin-top:0">Leave requests</h3>
+    <button class="primary sm" id="reqLeave">Request leave</button></div>`);
+  card.querySelector('#reqLeave').onclick=()=>openLeave();
+  wrap.appendChild(card);
+  state.leaves.leaves.forEach(l=>{
+    const m=memberById(l.member); const d=el(`<div class="card leavecard">
+      <div><b>${m?escapeHtml(m.name):l.member}</b> <span class="muted small">${l.from} → ${l.to}</span><div class="muted small">${escapeHtml(l.reason||'')}</div></div>
+      <span class="pill ${l.status==='approved'?'low':l.status==='rejected'?'high':'medium'}">${l.status}</span>
+      ${isLead() && l.status==='pending'?`<div class="row"><button class="primary sm" data-a="approve">Approve</button><button class="danger sm" data-a="reject">Reject</button></div>`:''}
+    </div>`);
+    if(isLead() && l.status==='pending'){
+      d.querySelector('[data-a=approve]').onclick=async ()=>{ l.status='approved'; await writeFile('leaves.json', state.leaves); toast('Approved leave.'); await getGist(); render(); };
+      d.querySelector('[data-a=reject]').onclick=async ()=>{ l.status='rejected'; await writeFile('leaves.json', state.leaves); toast('Rejected leave.'); await getGist(); render(); };
+    }
+    wrap.appendChild(d);
+  });
+  if(!state.leaves.leaves.length) wrap.appendChild(el(`<div class="empty">No leave requests yet.</div>`));
+  return wrap;
+}
+function openLeave(){
+  modal(`<h3>Request leave</h3>
+    <label>From</label><input id="lf" type="date" />
+    <label>To</label><input id="lt2" type="date" />
+    <label>Reason</label><input id="lr" placeholder="optional" />
+    <div class="row" style="margin-top:12px"><div class="spacer"></div><button class="sm" id="lc">Cancel</button><button class="primary sm" id="ls">Submit</button></div>`);
+  document.getElementById('lc').onclick=closeModal;
+  document.getElementById('ls').onclick=async ()=>{
+    const from=val('lf'), to=val('lt2'); if(!from||!to) return toast("Dates required");
+    const leave={id:uid(), member:state.user.id, from, to, reason:val('lr'), status: isLead()?'approved':'pending'};
+    await proposeChange({type:'leave_request', file:'leaves.json', fileKey:'leaves', summary:`Leave ${from}→${to} (${state.user.name})`, payload:{leave}});
+    closeModal();
+  };
+}
+
+/* ---------- Approvals view (lead) ---------- */
+function viewApprovals(){
+  const wrap = el(`<div></div>`);
+  const card = el(`<div class="card"><h3 style="margin-top:0">Pending approvals</h3></div>`);
+  const list = state.pending.requests||[];
+  if(!list.length) card.appendChild(el(`<div class="empty">Nothing pending. Team is unified. 🤝</div>`));
+  list.forEach(r=>{
+    const d=el(`<div class="card" style="margin:8px 0">
+      <div class="row"><b>${escapeHtml(r.summary)}</b><div class="spacer"></div><span class="badge">${r.type}</span></div>
+      <div class="muted small">by ${escapeHtml(r.byName)} · ${timeAgo(r.createdAt)}</div>
+      <div class="row" style="margin-top:10px"><button class="primary sm" data-a="ok">Approve</button><button class="danger sm" data-a="no">Reject</button></div>
+    </div>`);
+    d.querySelector('[data-a=ok]').onclick=()=>approveChange(r.id);
+    d.querySelector('[data-a=no]').onclick=()=>{ const reason=prompt("Reject reason?"); rejectChange(r.id, reason); };
+    card.appendChild(d);
+  });
+  wrap.appendChild(card);
+  return wrap;
+}
+
+/* ---------- Manage view (lead) ---------- */
+function viewManage(){
+  const wrap = el(`<div></div>`);
+  const card = el(`<div class="card"><h3 style="margin-top:0">Manage developers</h3>
+    <p class="muted small">Set each developer's app password. They log in with username + password + their own GitHub token (gist scope) to submit changes for your approval.</p></div>`);
+  state.auth.developers.forEach(d=>{
+    const row=el(`<div class="card" style="margin:8px 0">
+      <div class="row"><b>${escapeHtml(d.name)} <span class="muted small">(@${d.username})</span></b></div>
+      <label>New password</label><input class="pw" type="password" placeholder="set / reset password" />
+      <button class="primary sm" style="margin-top:8px">Set password</button>
+    </div>`);
+    row.querySelector('button').onclick=async ()=>{
+      const p=row.querySelector('.pw').value; if(!p) return toast("Enter a password");
+      d.passwordHash = await sha256(p);
+      await writeFile('auth.json', state.auth);
+      toast("Password set for "+d.name); closeModal;
+    };
+    card.appendChild(row);
+  });
+  wrap.appendChild(card);
+  const info = el(`<div class="card small"><b>Share with team (pin on WhatsApp):</b><br>https://nd28.github.io/team-os/#gist=${GIST_ID}<br><span class="muted">Gist id is encoded in the URL hash. Anyone with the link can read the board; only you approve changes.</span></div>`);
+  wrap.appendChild(info);
+  return wrap;
+}
+
+/* ---------- modal ---------- */
+function modal(html){ const m=document.getElementById('modal'); m.innerHTML=`<div class="modal"><div class="box">${html}</div></div>`; m.querySelector('.modal').onclick=e=>{if(e.target.classList.contains('modal'))closeModal();}; }
+function closeModal(){ document.getElementById('modal').innerHTML=""; }
+function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ---------- boot ---------- */
+async function boot(){
+  GIST_ID = (location.hash.match(/gist=([a-f0-9]+)/)||[])[1] || localStorage.getItem(LS.gist) || "";
+  if(!GIST_ID){
+    document.getElementById('view').innerHTML = `<div class="card" style="max-width:480px;margin:30px auto">
+      <h2 style="margin-top:0">Team OS</h2><p class="muted">Open the link the lead pinned on WhatsApp — it contains the gist id in the URL hash (<code>#gist=…</code>).</p>
+      <label>Or paste gist id</label><input id="gid" placeholder="8613…d11a08" />
+      <button class="primary" id="gset" style="margin-top:10px">Continue</button></div>`;
+    document.getElementById('gset').onclick=async ()=>{ GIST_ID=val('gid').trim(); location.hash=`gist=${GIST_ID}`; localStorage.setItem(LS.gist,GIST_ID); await init(); };
+    return;
+  }
+  localStorage.setItem(LS.gist,GIST_ID);
+  await init();
+}
+async function init(){
+  try { await getGist(); } catch(e){ document.getElementById('view').innerHTML=`<div class="card">Failed to load gist: ${e.message}</div>`; return; }
+  // auto-restore session? tokens persisted; user must choose role again (cheap + safe)
+  render();
+  // refresh every 60s so everyone sees latest
+  setInterval(async ()=>{ try{ await getGist(); if(state.user) render(); }catch(_){} }, 60000);
+}
+boot();
+</script>
+</body>
+</html>
