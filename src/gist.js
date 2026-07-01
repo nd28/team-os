@@ -17,17 +17,28 @@ export function captureRateLimit(h) {
   }
 }
 
-/** Update the rate-limit badge in the header. */
+/** Update the rate-limit badge in the header. Stacked layout:
+ *  line 1:  [●  4999 / 5000]   (remaining — primary, bold, full opacity)
+ *  line 2:  [    42:15     ]   (reset timer — tertiary, regular, low opacity)
+ * @returns {void}
+ */
 export function renderRateLimit() {
   const el = document.getElementById('rlBadge');
   if (!el || !state.rateLimit) return;
   const rl = state.rateLimit;
   const secs = Math.max(0, rl.reset - Math.floor(Date.now() / 1000));
   const mm = Math.floor(secs / 60), ss = secs % 60;
+  const timer = `${mm}:${ss.toString().padStart(2, '0')}`;
   const low = rl.remaining <= 5;
-  el.innerHTML = `<span class="rl-dot ${low ? 'low' : ''}"></span>${rl.remaining}/${rl.limit}${secs > 0 ? ` · ${mm}:${ss.toString().padStart(2, '0')}` : ''}`;
-  el.title = `GitHub API: ${rl.remaining}/${rl.limit} requests left. Resets in ${mm}:${ss.toString().padStart(2, '0')}.`;
   el.classList.toggle('low', low);
+  el.innerHTML =
+    `<span class="rl-line"><span class="rl-dot"></span>` +
+      `<span class="rl-rem">${rl.remaining}</span>` +
+      `<span class="rl-sep">/</span>` +
+      `<span class="rl-tot">${rl.limit}</span>` +
+    `</span>` +
+    (secs > 0 ? `<span class="rl-timer">${timer}</span>` : '');
+  el.title = `GitHub API: ${rl.remaining}/${rl.limit} requests left. Resets in ${timer}.`;
 }
 
 /**
