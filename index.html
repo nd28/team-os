@@ -45,6 +45,10 @@
   header.top{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--glass-border);position:sticky;top:0;background:var(--glass-bg);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);z-index:5}
   header.top .brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:18px}
   header.top .who{margin-left:auto;color:var(--mut);font-size:14px;display:flex;align-items:center;gap:8px}
+  .rl-badge{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--mut);font-variant-numeric:tabular-nums;min-height:28px;padding:4px 8px;border-radius:8px;background:var(--glass-bg2);border:1px solid var(--glass-border);white-space:nowrap}
+  .rl-badge.low{color:var(--bad);border-color:var(--bad)}
+  .rl-dot{width:7px;height:7px;border-radius:50%;background:var(--ok);display:inline-block;flex-shrink:0}
+  .rl-badge.low .rl-dot{background:var(--bad)}
   .avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--pri));display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff}
   nav.tabs{display:flex;gap:4px;padding:8px 10px;border-bottom:1px solid var(--glass-border);overflow:auto;background:var(--glass-bg);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur)}
   nav.tabs button{white-space:nowrap;background:transparent;border-color:transparent;color:var(--mut);flex:1 1 0;justify-content:center;display:flex;align-items:center;gap:6px;min-height:44px}
@@ -112,6 +116,7 @@
     Team OS
   </div>
   <div class="who" id="who">
+    <span class="rl-badge" id="rlBadge" title="GitHub API rate limit"></span>
     <button class="sm theme-btn" id="themeBtn" title="Toggle light/dark" style="min-height:38px;padding:8px 10px"></button>
   </div>
 </header>
@@ -129,7 +134,7 @@
  */
 const GITHUB_API = "https://api.github.com";
 let GIST_ID = "";
-let state = { auth:null, team:null, tasks:null, leaves:null, pending:null, user:null, raw:null };
+let state = { auth:null, team:null, tasks:null, leaves:null, pending:null, user:null, raw:null, rateLimit:null };
 const LS = { token:(u)=>`tos_token_${u}`, pass:(u)=>`tos_pass_${u}`, gist:"tos_gist_id", loc:()=>"tos_lastloc", session:"tos_session", cache:"tos_gist_cache" };
 
 /* ---------- theme ---------- */
@@ -172,6 +177,26 @@ function uid(){return 'x'+Math.random().toString(36).slice(2,8)+Date.now().toStr
 async function sha256(s){const b=new TextEncoder().encode(s);const h=await crypto.subtle.digest('SHA-256',b);return [...new Uint8Array(h)].map(x=>x.toString(16).padStart(2,'0')).join('');}
 
 /* ---------- gist I/O ---------- */
+function captureRateLimit(h){
+  const lim = h.get("x-ratelimit-limit");
+  const rem = h.get("x-ratelimit-remaining");
+  const res = h.get("x-ratelimit-reset");
+  if(lim && rem && res){
+    state.rateLimit = { limit:+lim, remaining:+rem, reset:+res };
+    renderRateLimit();
+  }
+}
+function renderRateLimit(){
+  const el = document.getElementById('rlBadge');
+  if(!el || !state.rateLimit) return;
+  const rl = state.rateLimit;
+  const secs = Math.max(0, rl.reset - Math.floor(Date.now()/1000));
+  const mm = Math.floor(secs/60), ss = secs%60;
+  const low = rl.remaining <= 5;
+  el.innerHTML = `<span class="rl-dot ${low?'low':''}"></span>${rl.remaining}/${rl.limit}${secs>0?` · ${mm}:${ss.toString().padStart(2,'0')}`:''}`;
+  el.title = `GitHub API: ${rl.remaining}/${rl.limit} requests left. Resets in ${mm}:${ss.toString().padStart(2,'0')}.`;
+  el.classList.toggle('low', low);
+}
 async function getGist(token){
   token = token || (state.user && currentUserToken()) || "";
   const headers = { "Accept":"application/vnd.github+json" };
@@ -185,6 +210,7 @@ async function getGist(token){
   }
   const r = await fetch(`${GITHUB_API}/gists/${GIST_ID}?_=${Date.now()}`, { headers });
   if(!r.ok) throw new Error("Gist read failed: "+r.status);
+  captureRateLimit(r.headers);
   const j = await r.json();
   state.raw = j;
   const parse = f => { try { return JSON.parse(j.files[f].content); } catch(e){ return null; } };
@@ -202,6 +228,7 @@ async function patchGist(token, files){
     body: JSON.stringify(body)
   });
   if(!r.ok){ let m="Gist write failed: "+r.status; try{const e=await r.json();m+=" "+(e.message||"");}catch(_){} throw new Error(m); }
+  captureRateLimit(r.headers);
   localStorage.removeItem(LS.cache); // invalidate cache after write
   return r.json();
 }
@@ -346,14 +373,16 @@ let currentTab = 'board';
 function render(){
   const who = document.getElementById('who');
   const themeBtnHTML = `<button class="sm theme-btn" id="themeBtn" title="Toggle light/dark" style="min-height:38px;padding:8px 10px">${currentTheme()==='light'?IC_MOON:IC_SUN}</button>`;
+  const rlBadgeHTML = `<span class="rl-badge" id="rlBadge" title="GitHub API rate limit"></span>`;
   if(state.user){
     who.innerHTML = `<span class="status active"><span class="dot"></span>${state.user.name}</span>
       <button class="sm" id="btnCheckin">${IC.loc} Check-in</button>
       <button class="sm" id="btnLogout">${IC.logout}</button>
-      ${themeBtnHTML}`;
+      ${rlBadgeHTML}${themeBtnHTML}`;
     document.getElementById('btnCheckin').onclick=checkin;
     document.getElementById('btnLogout').onclick=()=>{ state.user=null; render(); };
-  } else { who.innerHTML = `${themeBtnHTML}<span class="muted small">not logged in</span>`; }
+  } else { who.innerHTML = `${rlBadgeHTML}${themeBtnHTML}<span class="muted small">not logged in</span>`; }
+  renderRateLimit();
   document.getElementById('themeBtn').onclick=()=>setTheme(currentTheme()==='dark'?'light':'dark');
 
   const tabs = document.getElementById('tabs');
@@ -704,6 +733,8 @@ async function init(){
   }
   // refresh every 60s so everyone sees latest (uses token when logged in)
   setInterval(async ()=>{ try{ await getGist(); if(state.user) render(); }catch(_){} }, 60000);
+  // countdown rate-limit badge every second
+  setInterval(renderRateLimit, 1000);
 }
 boot();
 </script>
