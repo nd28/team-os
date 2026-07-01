@@ -1,13 +1,8 @@
-/**
- * Manage view (lead-only): set developer passwords + share link.
- * @module views/manage
- */
-
-import { state, getGistId } from '../state.js';
-import { el, escapeHtml, toast, sha256, val } from '../util.js';
+/** @module views/manage */
+import { state, getGistId, currentUserToken } from '../state.js';
+import { el, escapeHtml, toast, sha256 } from '../util.js';
 import { patchGist, getGist } from '../gist.js';
 
-/** @returns {HTMLElement} */
 export function viewManage() {
   const wrap = el('<div></div>');
   const card = el(`<div class="card"><h3 style="margin-top:0">Manage developers</h3>
@@ -26,10 +21,11 @@ export function viewManage() {
       if (!newName || !newUn) return toast('Name and username required');
       d.name = newName; d.username = newUn;
       if (p) d.passwordHash = await sha256(p);
-      const m = state.team.members.find((m) => m.id === d.id); if (m) m.name = newName;
-      // single PATCH with both files to avoid 409 race
+      const m = state.team.members.find((m) => m.id === d.id);
+      if (m) m.name = newName;
       try {
-        await patchGist(state.auth._token || localStorage.getItem('tos_token_' + (state.user?.username || '')), {
+        // single PATCH with both files to avoid 409 race
+        await patchGist(currentUserToken(), {
           'auth.json': { content: JSON.stringify(state.auth, null, 2) },
           'team.json': { content: JSON.stringify(state.team, null, 2) },
         });
@@ -42,8 +38,6 @@ export function viewManage() {
     card.appendChild(row);
   });
   wrap.appendChild(card);
-
-  const info = el(`<div class="card small"><b>Share with team (pin on WhatsApp):</b><br>https://nd28.github.io/team-os/#gist=${getGistId()}<br><span class="muted">Gist id is encoded in the URL hash. Anyone with the link can read the board; only you approve changes.</span></div>`);
-  wrap.appendChild(info);
+  wrap.appendChild(el(`<div class="card small"><b>Share with team (pin on WhatsApp):</b><br>https://nd28.github.io/team-os/#gist=${getGistId()}<br><span class="muted">Gist id is encoded in the URL hash. Anyone with the link can read the board; only you approve changes.</span></div>`));
   return wrap;
 }

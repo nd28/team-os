@@ -1,22 +1,15 @@
-/**
- * Team view: per-member workload meters (lead can edit) + upcoming-deadlines list.
- * @module views/team
- */
-
+/** @module views/team */
 import { state, isLead, memberById } from '../state.js';
 import { el, escapeHtml, toast } from '../util.js';
 import { dueInfo, timeAgo, activeLeave } from '../format.js';
 import { workloadFor } from './board.js';
 import { IC } from '../icons.js';
 import { proposeChange } from '../propose.js';
-import { writeFile, getGist } from '../gist.js';
 
-/** @returns {HTMLElement} */
 export function viewTeam() {
   const wrap = el('<div></div>');
+  const mm = el('<div class="card"><h3 style="margin-top:0">Workload & Ownership</h3><div class="meters"></div></div>').querySelector('.meters');
 
-  const meters = el('<div class="card"><h3 style="margin-top:0">Workload & Ownership</h3><div class="meters"></div></div>');
-  const mm = meters.querySelector('.meters');
   state.team.members.forEach((m) => {
     const w = workloadFor(m.id);
     const onLeave = state.leaves.leaves.some((l) => l.member === m.id && l.status === 'approved' && activeLeave(l));
@@ -35,24 +28,19 @@ export function viewTeam() {
     if (isLead()) {
       card.querySelector('button').onclick = async () => {
         try {
-          await proposeChange({
-            type: 'profile_update', file: 'team.json', fileKey: 'team',
+          await proposeChange({ type: 'profile_update', file: 'team.json', fileKey: 'team',
             summary: `Update profile for ${m.name}`,
-            payload: {
-              memberId: m.id,
+            payload: { memberId: m.id,
               responsibilities: card.querySelector('.med-r').value,
               workload: +card.querySelector('.med-w').value,
-              status: card.querySelector('.med-s').value,
-            },
-          });
+              status: card.querySelector('.med-s').value } });
         } catch (e) { toast(e.message); }
       };
     }
     mm.appendChild(card);
   });
-  wrap.appendChild(meters);
+  wrap.appendChild(mm.parentNode);
 
-  // upcoming deadlines
   const up = state.tasks.tasks.filter((t) => t.status !== 'done' && t.deadline).sort((a, b) => a.deadline.localeCompare(b.deadline));
   const dl = el('<div class="card"><h3 style="margin-top:0">Upcoming deadlines</h3></div>');
   if (!up.length) dl.appendChild(el('<div class="empty">none</div>'));
